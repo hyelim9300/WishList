@@ -10,19 +10,28 @@ import CoreData
 
 class WishListViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
+    // MARK: - Outlets
     @IBOutlet weak var tableView: UITableView!
+    
+    // MARK: - Properties
     private var productList: [Product] = []
     
     var persistentContainer: NSPersistentContainer? {
         (UIApplication.shared.delegate as? AppDelegate)?.persistentContainer
     }
     
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupTableView()
+        setProductList()
+    }
+    
+    // MARK: - Methods
+    private func setupTableView() {
         tableView.dataSource = self
         tableView.delegate = self
         tableView.register(TableViewCell.nib(), forCellReuseIdentifier: TableViewCell.identifier)
-        setProductList()
     }
     
     private func setProductList() {
@@ -52,16 +61,20 @@ class WishListViewController: UIViewController, UITableViewDelegate, UITableView
 
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            if let context = persistentContainer?.viewContext {
-                let productToDelete = productList[indexPath.row]
-                context.delete(productToDelete)
-                do {
-                    try context.save()
-                    productList.remove(at: indexPath.row)
-                    tableView.deleteRows(at: [indexPath], with: .fade)
-                } catch let error as NSError {
-                    print("삭제 중 오류 발생: \(error), \(error.userInfo)")
-                }
+            deleteProduct(at: indexPath)
+        }
+    }
+    
+    private func deleteProduct(at indexPath: IndexPath) {
+        if let context = persistentContainer?.viewContext {
+            let productToDelete = productList[indexPath.row]
+            context.delete(productToDelete)
+            do {
+                try context.save()
+                productList.remove(at: indexPath.row)
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            } catch let error as NSError {
+                print("오류: \(error)")
             }
         }
     }

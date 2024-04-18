@@ -9,7 +9,8 @@ import UIKit
 import CoreData
 
 class ViewController: UIViewController {
-
+    
+    // MARK: - Properties
     var persistentContainer: NSPersistentContainer? {
         (UIApplication.shared.delegate as? AppDelegate)?.persistentContainer
     }
@@ -32,12 +33,13 @@ class ViewController: UIViewController {
             }
         }
     }
-    
+    // MARK: - Outlets
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var descriptionLabel: UILabel!
     @IBOutlet weak var priceLabel: UILabel!
     
+    // MARK: - Actions
     @IBAction func tappedSaveProductButton(_ sender: UIButton) {
         self.saveWishProduct()
     }
@@ -54,6 +56,13 @@ class ViewController: UIViewController {
         self.present(nextVC, animated: true)
     }
     
+    // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.fetchRemoteProduct()
+    }
+    
+    // MARK: - Methods
     private func fetchRemoteProduct() {
         let productID = Int.random(in: 1 ... 100)
         
@@ -73,22 +82,19 @@ class ViewController: UIViewController {
             task.resume()
         }
     }
+    
     private func saveWishProduct() {
         guard let context = self.persistentContainer?.viewContext else { return }
-
+        
         guard let currentProduct = self.currentProduct else { return }
-
+        
         let wishProduct = Product(context: context)
         
         wishProduct.id = Int64(currentProduct.id)
         wishProduct.title = currentProduct.title
         wishProduct.price = currentProduct.price
-
+        
         try? context.save()
     }
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        self.fetchRemoteProduct()
-    }
 }
