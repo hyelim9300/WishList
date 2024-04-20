@@ -38,6 +38,7 @@ class ViewController: UIViewController {
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var descriptionLabel: UILabel!
     @IBOutlet weak var priceLabel: UILabel!
+    @IBOutlet var scrollView: UIScrollView! // 스토리보드에서 UIScrollView를 연결해주세요.
     
     // MARK: - Actions
     @IBAction func tappedSaveProductButton(_ sender: UIButton) {
@@ -60,28 +61,70 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.fetchRemoteProduct()
+        self.setupRefreshControl()
     }
     
     // MARK: - Methods
-    private func fetchRemoteProduct() {
-        let productID = Int.random(in: 1 ... 100)
+//    private func fetchRemoteProduct() {
+//        let productID = Int.random(in: 1 ... 100)
+//        
+//        if let url = URL(string: "https://dummyjson.com/products/\(productID)") {
+//            let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
+//                if let error = error {
+//                    print("Error: \(error)")
+//                } else if let data = data {
+//                    do {
+//                        let product = try JSONDecoder().decode(RemoteProduct.self, from: data)
+//                        self.currentProduct = product
+//                    } catch {
+//                        print("Decode Error: \(error)")
+//                    }
+//                }
+//            }
+//            task.resume()
+//        }
+//    }
         
-        if let url = URL(string: "https://dummyjson.com/products/\(productID)") {
-            let task = URLSession.shared.dataTask(with: url) { (data, response, error) in
-                if let error = error {
-                    print("Error: \(error)")
-                } else if let data = data {
-                    do {
-                        let product = try JSONDecoder().decode(RemoteProduct.self, from: data)
-                        self.currentProduct = product
-                    } catch {
-                        print("Decode Error: \(error)")
+        private let refreshControl = UIRefreshControl()
+
+        private func setupRefreshControl() {
+            // UIRefreshControl을 초기화하고 scrollView에 추가합니다.
+            scrollView.refreshControl = refreshControl
+            // 사용자가 새로고침을 시작할 때 호출될 메소드를 지정합니다.
+            refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+        }
+        
+        @objc private func refreshData() {
+            // 새로운 데이터를 가져옵니다.
+            fetchRemoteProduct()
+        }
+
+        private func fetchRemoteProduct() {
+            let productID = Int.random(in: 1 ... 100)
+            
+            if let url = URL(string: "https://dummyjson.com/products/\(productID)") {
+                let task = URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+                    DispatchQueue.main.async {
+                        self?.refreshControl.endRefreshing() // 새로고침 종료
+                    }
+                    
+                    if let error = error {
+                        print("오류: \(error)")
+                        return
+                    } else if let data = data {
+                        do {
+                            let product = try JSONDecoder().decode(RemoteProduct.self, from: data)
+                            DispatchQueue.main.async {
+                                self?.currentProduct = product
+                            }
+                        } catch {
+                            print("오류: \(error)")
+                        }
                     }
                 }
+                task.resume()
             }
-            task.resume()
         }
-    }
     
     private func saveWishProduct() {
         guard let context = self.persistentContainer?.viewContext else { return }
